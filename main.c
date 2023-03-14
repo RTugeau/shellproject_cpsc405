@@ -8,7 +8,9 @@
 #define MAX_COMMAND_LENGTH 100
 #define MAX_PARAMS 10
 
-//comment so that I can make a test push
+
+
+//function declarations here so the warnings shut up.
 
 enum cmds {CD=0, EXIT, CAT, DOG, LS, PWD};
 
@@ -126,7 +128,6 @@ int pwd(){
 
     if (fork() == 0){
         execl("/bin/pwd", "pwd", NULL);
-        exit(0);
     }
     else{
         //Parent stuff happens here.
@@ -138,6 +139,20 @@ int pwd(){
 }
 
 int catHandler(char* input){
+
+    if(fork==0){
+        //child process here
+    execl("/bin/cat",input,NULL);
+    //below lines will not execute if execl() succeeds.
+    perror("cat failed.");
+    exit(1);
+    //these will force exit.
+    }
+    else{
+
+        //parent process here
+
+    }
     printf("cat function fired!\n");
     return 0;
 
@@ -153,7 +168,8 @@ int ls(char* input) {
 
     if (fork() == 0){
         execl("/bin/ls", "ls", NULL);
-        exit(0);
+        perror("ls failed.");
+        exit(1);
     }
     else{
         //Parent stuff happens here.
