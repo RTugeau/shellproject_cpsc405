@@ -8,6 +8,8 @@
 #define MAX_COMMAND_LENGTH 100
 #define MAX_PARAMS 10
 
+//comment so that I can make a test push
+
 enum cmds {CD=0, EXIT, CAT, DOG, LS};
 
 char *cmdstr[] = {"cd","exit","cat","dog", "ls"};
