@@ -78,6 +78,7 @@ void parseCmd(char* cmd, char** params, int *nparams)
 int executeCmd(char** params, int nparams)
 {
         int rc = 1;
+        int data;
         int ncmds = sizeof(cmdstr) / sizeof(char *); 
         int cmd_index;
         for (cmd_index = 0; cmd_index < ncmds; cmd_index++)
@@ -93,15 +94,35 @@ int executeCmd(char** params, int nparams)
                         pipe(fd);
                         //at this point, we have openned the pipes.
                         //the pipes are prepared for use.
-                        pipeFlag=1;
+                        //pipeFlag=1;
                         //this will signal the other functions that they are piping.
+                        if(pipe(fd) < 0) {
+                            perror("pipe");
+                            exit(1);
+                        }
+                        if(fork() == 0) {
+                            //child
+                            dup2(fd[1], STDOUT_FILENO);
+                            close(fd[0]);
+                            data = 1;
+                        } else {
+                            for (cmd_index = cmd_index; cmd_index < ncmds; cmd_index++) {
+                                if (strcmp(params[word+1], cmdstr[cmd_index]) == 0) {
+                                    break;
+                                }
+                            }
+                            dup2(fd[0], STDIN_FILENO);
+                            close(fd[1]);
+                            data = word + 2;
+                            wait();
+                        }
                 }
         }
 
         switch (cmd_index){
                 case CD: 
                         if(nparams == 2){ 
-                                if(cd(params[1]) == 0){ 
+                                if(cd(params[data]) == 0){ 
                                         //if cd() returns 0, that means everything is ok :)
                                 }
                         }
@@ -114,7 +135,7 @@ int executeCmd(char** params, int nparams)
 
                 case CAT:
                         if( nparams == 2 ){
-                                if( catHandler(params[1]) == 0){ 
+                                if( catHandler(params[data]) == 0){ 
                                         //all good.
                                 }
                         }
@@ -123,7 +144,7 @@ int executeCmd(char** params, int nparams)
 
                 case DOG:
                         if( nparams == 2){ 
-                                if( dogHandler(params[1]) == 0 ) { 
+                                if( dogHandler(params[data]) == 0 ) { 
                                         //all good.
                                 }
                         }
@@ -131,7 +152,7 @@ int executeCmd(char** params, int nparams)
                         break;
                 case LS:
                         if( nparams == 1 ) {
-                                if( ls(params[1]) == 0 ) {
+                                if( ls(params[data]) == 0 ) {
                                         //all good
                                 }
                         }
@@ -162,7 +183,7 @@ int executeCmd(char** params, int nparams)
 }
 
 int cd(char* input){
-
+        
         if (fork() == 0){
                 execl("/bin/cd", "cd", NULL);
         }
