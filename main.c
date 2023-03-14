@@ -11,7 +11,7 @@
 #define MAX_COMMAND_LENGTH 100
 #define MAX_PARAMS 10
 
-int global pipeFlag = 0;
+//int global pipeFlag = 0;
 
 void signal_handler(){
         printf("Use CTR+D to kill, silly goose!\n");
@@ -29,7 +29,7 @@ int main()
         char cmd[MAX_COMMAND_LENGTH + 1];
         char* params[MAX_PARAMS+1];
         int cmdCount=0,nparams=0;
-        struct sigaction new, old, dsa;
+        struct sigaction new, old;
 
 
         //sigaction stuff here...
@@ -49,7 +49,7 @@ int main()
 
 
         while(1){
-                pipeFlag = 0;
+                //pipeFlag = 0;
                 nparams=0;
                 char*username = getenv("USER");
                 printf("%s@snailShell %d> " , username, ++cmdCount);
@@ -58,6 +58,7 @@ int main()
                 parseCmd(cmd, params, &nparams);
                 if(strcmp(params[0], "exit") == 0) break;
                 if(executeCmd(params, nparams) == 0) break;
+
         }
 
         return 0;
@@ -116,6 +117,13 @@ int executeCmd(char** params, int nparams)
                             data = word + 2;
                             wait();
                         }
+                }
+                if(strcmp(params[ncmds-1], "&") == 0) {
+                    // run process in the background
+                    printf("Process running in background");
+                    continue;
+                } else {
+                    wait(NULL);
                 }
         }
 
