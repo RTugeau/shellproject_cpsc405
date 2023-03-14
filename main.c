@@ -10,9 +10,9 @@
 
 //comment so that I can make a test push
 
-enum cmds {CD=0, EXIT, CAT, DOG, LS};
+enum cmds {CD=0, EXIT, CAT, DOG, LS, PWD};
 
-char *cmdstr[] = {"cd","exit","cat","dog", "ls"};
+char *cmdstr[] = {"cd","exit","cat","dog", "ls", "pwd"};
 
 int main()
 {   
@@ -30,7 +30,7 @@ int main()
         if(strcmp(params[0], "exit") == 0) break;
         if(executeCmd(params, nparams) == 0) break;
     }
-    
+
     return 0;
 }
 
@@ -86,14 +86,23 @@ int executeCmd(char** params, int nparams)
             }
             else{printf("dog command broke. make sure you're only using one param.\n");}
             break;
-	case LS:
-	    if( nparams == 2 ) {
-		if( ls(params[1]) == 0 ) {
-		    //all good
-		}
-	    }
-	    else {printf("ls command broke. make sure you're only using one param.\n");}
-	    break;
+        case LS:
+            if( nparams == 1 ) {
+                if( ls(params[1]) == 0 ) {
+                    //all good
+                }
+            }
+            else {printf("ls command broke. make sure your ls is naked.\n");}
+            break;
+
+        case PWD:
+            if(nparams==1){
+                if(pwd()==0){
+                    //all good
+                }
+            }
+            else{printf("pwd command broke. make sure it is naked.\n");}
+
         default:
             printf("Invalid command!\n");
     }   
@@ -102,8 +111,30 @@ int executeCmd(char** params, int nparams)
 }
 
 int cd(char* input){
+
+    if (fork() == 0){
+        execl("/bin/cd", "cd", NULL);
+    }
+    else{
+        //Parent stuff happens here.
+    }
     printf("cd function fired!\n");
     return 0;
+}
+
+int pwd(){
+
+    if (fork() == 0){
+        execl("/bin/pwd", "pwd", NULL);
+        exit(0);
+    }
+    else{
+        //Parent stuff happens here.
+    }
+
+    printf("pwd function fired!\n");
+    return 0;
+
 }
 
 int catHandler(char* input){
@@ -119,8 +150,14 @@ int dogHandler(char* input){
 }
 
 int ls(char* input) {
-    execl("/bin/ls", "ls", NULL);
-    perror("execl");
-    exit(EXIT_FAILURE);
+
+    if (fork() == 0){
+        execl("/bin/ls", "ls", NULL);
+        exit(0);
+    }
+    else{
+        //Parent stuff happens here.
+    }
+
     return 0;
 }
