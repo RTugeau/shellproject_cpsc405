@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <stdlib.h>
+#include "main.h"
 
 #define MAX_COMMAND_LENGTH 100
 #define MAX_PARAMS 10

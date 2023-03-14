@@ -8,3 +8,5 @@ int pwd();
 int catHandler(char* input);
 int dogHandler(char* input);
 int ls(char* input);
+int cd();
+
