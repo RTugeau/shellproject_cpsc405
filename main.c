@@ -7,11 +7,13 @@
 #include "main.h"
 #include <signal.h>
 
-
 #define MAX_COMMAND_LENGTH 100
+#define MAX_PARAMETER_LENGTH 30
 #define MAX_PARAMS 10
 
 //int global pipeFlag = 0;
+int status = -900;
+int pipeFlag=0;
 
 void signal_handler(){
         printf("Use CTR+D to kill, silly goose!\n");
@@ -49,8 +51,11 @@ int main()
 
 
         while(1){
-                //pipeFlag = 0;
                 nparams=0;
+                pipeFlag=0;
+                if(status==0){
+                        exit(0);
+                }
                 char*username = getenv("USER");
                 printf("%s@snailShell %d> " , username, ++cmdCount);
                 if(fgets(cmd,sizeof(cmd),stdin) == NULL) break;
@@ -85,12 +90,17 @@ int executeCmd(char** params, int nparams)
         for (cmd_index = 0; cmd_index < ncmds; cmd_index++)
                 if (strcmp(params[0], cmdstr[cmd_index]) == 0)
                         break;
-        
+
+        //set default input data for the case that we don't need to pipe:
+        char *inputdata [MAX_PARAMETER_LENGTH];
+        char *inputbuffer[MAX_PARAMETER_LENGTH];
         //now we check to find if we will need to pipe:
         int word;
         for(word=0; word < ncmds; word++){
-                if(strcmp(params[word],'|')==0){
+                if(params[word]==NULL){break;}
+                if(strcmp(params[word],"|")==0){
                         //in here, we know that we have a pipe.
+                        pipeFlag=1;
                         int fd[2];
                         pipe(fd);
                         //at this point, we have openned the pipes.
@@ -98,39 +108,45 @@ int executeCmd(char** params, int nparams)
                         //pipeFlag=1;
                         //this will signal the other functions that they are piping.
                         if(pipe(fd) < 0) {
-                            perror("pipe");
-                            exit(1);
+                                perror("pipe");
+                                exit(1);
                         }
-                        if(fork() == 0) {
-                            //child
-                            dup2(fd[1], STDOUT_FILENO);
-                            close(fd[0]);
-                            data = 1;
+                        status=fork();
+                        if(status == 0) {
+                                //child (first command)
+                                dup2(fd[1], STDOUT_FILENO);
+                                close(fd[0]);
+                                data = 1;
+                                strcpy(inputdata,params[1]);
                         } else {
-                            for (cmd_index = cmd_index; cmd_index < ncmds; cmd_index++) {
-                                if (strcmp(params[word+1], cmdstr[cmd_index]) == 0) {
-                                    break;
+                                //Parent (second command)
+                                for (cmd_index = cmd_index; cmd_index < ncmds; cmd_index++) {
+                                        if (strcmp(params[word+1], cmdstr[cmd_index]) == 0) {
+                                                break;
+                                        }
                                 }
-                            }
-                            dup2(fd[0], STDIN_FILENO);
-                            close(fd[1]);
-                            data = word + 2;
-                            wait();
+                                wait();
+                                //must gather data from child before continuing.
+                                //dup2(fd[0], STDIN_FILENO);
+                                close(fd[1]);
+                                read(fd[0] , inputbuffer , MAX_PARAMETER_LENGTH -1 ); 
+                                //printf("sanity check.. inputdata = %s , inputbuffer = %s\n", inputdata,inputbuffer); 
+                                strcpy(inputdata,inputbuffer);
                         }
                 }
+                
                 if(strcmp(params[ncmds-1], "&") == 0) {
-                    // run process in the background
-                    printf("Process running in background");
-                    continue;
+                        // run process in the background
+                        printf("Process running in background");
+                        continue;
                 } else {
-                    wait(NULL);
+                        wait(NULL);
                 }
         }
-
         switch (cmd_index){
                 case CD: 
-                        if(nparams == 2){ 
-                                if(cd(params[data]) == 0){ 
+                        if(nparams >1){ 
+                                if(cd(inputdata) == 0){ 
                                         //if cd() returns 0, that means everything is ok :)
                                 }
                         }
@@ -142,8 +158,8 @@ int executeCmd(char** params, int nparams)
                         break;
 
                 case CAT:
-                        if( nparams == 2 ){
-                                if( catHandler(params[data]) == 0){ 
+                        if( nparams > 1 ){
+                                if( catHandler(inputdata) == 0){ 
                                         //all good.
                                 }
                         }
@@ -151,16 +167,16 @@ int executeCmd(char** params, int nparams)
                         break;
 
                 case DOG:
-                        if( nparams == 2){ 
-                                if( dogHandler(params[data]) == 0 ) { 
+                        if( nparams > 1){ 
+                                if( dogHandler(inputdata) == 0 ) { 
                                         //all good.
                                 }
                         }
                         else{printf("dog command broke. make sure you're only using one param.\n");}
                         break;
                 case LS:
-                        if( nparams == 1 ) {
-                                if( ls(params[data]) == 0 ) {
+                        if( nparams > 0) {
+                                if( ls(inputdata) == 0 ) {
                                         //all good
                                 }
                         }
@@ -168,7 +184,7 @@ int executeCmd(char** params, int nparams)
                         break;
 
                 case PWD:
-                        if(nparams==1){
+                        if(nparams > 0){
                                 if(pwd()==0){
                                         //all good
                                 }
@@ -186,12 +202,11 @@ int executeCmd(char** params, int nparams)
                 default:
                         printf("Invalid command!\n");
         }   
-
         return rc; 
 }
 
 int cd(char* input){
-        
+
         if (fork() == 0){
                 execl("/bin/cd", "cd", NULL);
         }
@@ -240,7 +255,7 @@ int catHandler(char* input){
 }
 
 int dogHandler(char* input){
-        printf("dog function fired!\n");
+        printf("dog function fired! bark bark!\n %s \n",input);
         return 0;
 
 }
