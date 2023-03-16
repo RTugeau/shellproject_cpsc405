@@ -190,6 +190,7 @@ int executeCmd(char** params, int nparams)
                                 }
                         }
                         else{printf("pwd command broke. make sure it is naked.\n");}
+                        break;
 
                 case DATE:
                         if(nparams>0){
@@ -198,6 +199,7 @@ int executeCmd(char** params, int nparams)
                                 }
                         }
                         else{printf("date command broke.\n");}
+                        break;
 
                 default:
                         printf("Invalid command!\n");
