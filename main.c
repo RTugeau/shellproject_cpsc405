@@ -22,9 +22,9 @@ void signal_handler(){
 
 //function declarations here so the warnings shut up.
 
-enum cmds {CD=0, EXIT, CAT, DOG, LS, PWD, DATE};
+enum cmds {CD=0, EXIT, CAT, DOG, LS, PWD, DATE, HELP};
 
-char *cmdstr[] = {"cd","exit","cat","dog", "ls", "pwd", "date"};
+char *cmdstr[] = {"cd","exit","cat","dog", "ls", "pwd", "date", "help"};
 
 int main()
 {   
@@ -134,10 +134,10 @@ int executeCmd(char** params, int nparams)
                                 strcpy(inputdata,inputbuffer);
                         }
                 }
-                
-                if(strcmp(params[ncmds-1], "&") == 0) {
+                //printf("ncmds-1: %d, params[ncmds-1]: %s\n", ncmds-1, params[ncmds-1]);
+                if(strcmp(params[nparams-1], "&") == 0) {
                         // run process in the background
-                        printf("Process running in background");
+                        printf("Process running in background\n");
                         continue;
                 } else {
                         wait(NULL);
@@ -171,6 +171,7 @@ int executeCmd(char** params, int nparams)
                                 if( dogHandler(inputdata) == 0 ) { 
                                         //all good.
                                 }
+
                         }
                         else{printf("dog command broke. make sure you're only using one param.\n");}
                         break;
@@ -199,6 +200,10 @@ int executeCmd(char** params, int nparams)
                                 }
                         }
                         else{printf("date command broke.\n");}
+                        break;
+
+                case HELP:
+                        printf("Commands: cd, exit, cat, dog, ls, pwd, date, help\n");
                         break;
 
                 default:
