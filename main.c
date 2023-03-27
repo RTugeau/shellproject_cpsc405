@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include "main.h"
 #include <signal.h>
-
+#include <sys/wait.h>
 #define MAX_COMMAND_LENGTH 100
 #define MAX_PARAMETER_LENGTH 30
 #define MAX_PARAMS 10
@@ -55,7 +55,7 @@ int main()
         pipeFlag=0;
         if(status==0){
 
-            if(backgroundFlag=1){
+            if(backgroundFlag==1){
 
                 while(1){}
             }
@@ -89,10 +89,36 @@ void parseCmd(char* cmd, char** params, int *nparams)
     }   
 }
 
+int date(char *input){
+   if(fork()==0){
+        execl("/bin/date", "date", NULL);
+        perror("date failed.\n");
+        exit(1);
+    }
+    else{
+        //Parent stuff here.
+        wait(NULL);
+    }
+
+    return 0;
+}
+
+int gustyHandler(char* input){
+    printf("gusty function fired! Alright!!\n %s \n",input);
+    if(fork() == 0) {
+        execl("/bin/cat", "cat", "gusty.txt", NULL);
+        perror("gusty error");
+        exit(1);
+    } else {
+        wait(NULL);
+    }
+    return 0;
+
+}
+
 int executeCmd(char** params, int nparams)
 {
     int rc = 1;
-    int data;
     int ncmds = sizeof(cmdstr) / sizeof(char *); 
     int cmd_index;
     for (cmd_index = 0; cmd_index < ncmds; cmd_index++)
@@ -100,13 +126,14 @@ int executeCmd(char** params, int nparams)
             break;
 
     //set default input data for the case that we don't need to pipe:
-    char *inputdata [MAX_PARAMETER_LENGTH];
+    char inputdata [MAX_PARAMETER_LENGTH];
     if(params[1] != NULL) { 
         strcpy(inputdata ,params[1]);
     }
-    char *inputbuffer[MAX_PARAMETER_LENGTH];
+    char inputbuffer[MAX_PARAMETER_LENGTH];
     //now we check to find if we will need to pipe:
     int word;
+    //int data;
     for(word=0; word < ncmds; word++){
         if(params[word]==NULL){break;}
         if(strcmp(params[word],"|")==0){
@@ -127,7 +154,7 @@ int executeCmd(char** params, int nparams)
                 //child (first command)
                 dup2(fd[1], STDOUT_FILENO);
                 close(fd[0]);
-                data = 1;
+                //data = 1;
                 strcpy(inputdata,params[1]);
             } else {
                 //Parent (second command)
@@ -136,7 +163,7 @@ int executeCmd(char** params, int nparams)
                         break;
                     }
                 }
-                wait();
+                //wait(NULL);
                 //must gather data from child before continuing.
                 //dup2(fd[0], STDIN_FILENO);
                 close(fd[1]);
@@ -145,17 +172,19 @@ int executeCmd(char** params, int nparams)
                 strcpy(inputdata,inputbuffer);
             }
         }
-
         if(strcmp(params[nparams-1], "&") == 0) {
             // run process in the background
             printf("Process running in background\n");
             status=fork();
-            if(status==0){backgroundFlag=1;}
-            else{return;}
+            if(status==0){
+                backgroundFlag=1;
+            }
         } else {
             wait(NULL);
+            break;
         }
     }
+
     switch (cmd_index){
         case CD: 
             if(nparams >1){ 
@@ -208,7 +237,7 @@ int executeCmd(char** params, int nparams)
 
         case DATE:
             if(nparams>0){
-                if(date()==0){
+                if(date(inputdata)==0){
                     //all good
                 }
             }
@@ -248,7 +277,7 @@ int cd(char* input){
     }
     else{
         //Parent stuff happens here.
-        wait();
+        wait(NULL);
     }
     //printf("cd function fired!\n");
     return 0;
@@ -260,7 +289,7 @@ int pwd(){
         execl("/bin/pwd", "pwd", NULL);
     }
     else{
-        wait();
+        wait(NULL);
         //Parent stuff happens here.
     }
 
@@ -282,23 +311,10 @@ int catHandler(char* input){
     else{
 
         //parent process here
-        wait();
+        wait(NULL);
 
     }
     //printf("cat function fired!\n");
-    return 0;
-
-}
-
-int gustyHandler(char* input){
-    printf("gusty function fired! Alright!!\n %s \n",input);
-    if(fork() == 0) {
-        execl("/bin/cat", "cat", "gusty.txt", NULL);
-        perror("gusty error");
-        exit(1);
-    } else {
-        wait();
-    }
     return 0;
 
 }
@@ -311,23 +327,8 @@ int ls(char* input) {
         exit(1);
     }
     else{
-        wait();
+        wait(NULL);
         //Parent stuff happens here.
-    }
-
-    return 0;
-}
-
-int date(char *input){
-
-    if(fork()==0){
-        execl("/bin/date", "date", NULL);
-        perror("date failed.\n");
-        exit(1);
-    }
-    else{
-        //Parent stuff here.
-        wait();
     }
 
     return 0;
